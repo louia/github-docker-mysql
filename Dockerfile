@@ -9,7 +9,8 @@ ARG CADDY_VERSION=2
 
 # "php" stage
 FROM php:${PHP_VERSION}-fpm-alpine AS symfony_php
-
+RUN docker-php-ext-install pdo pdo_mysql
+RUN docker-php-ext-enable pdo pdo_mysql
 # persistent / runtime deps
 RUN apk add --no-cache \
 		acl \
@@ -94,6 +95,12 @@ RUN composer create-project "symfony/skeleton ${SYMFONY_VERSION}" . --stability=
 	composer clear-cache
 
 ###> recipes ###
+###> doctrine/doctrine-bundle ###
+RUN apk add --no-cache --virtual .pgsql-deps postgresql-dev; \
+	docker-php-ext-install -j$(nproc) pdo_pgsql; \
+	apk add --no-cache --virtual .pgsql-rundeps so:libpq.so.5; \
+	apk del .pgsql-deps
+###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
 COPY . .
